@@ -5,10 +5,10 @@ inputs:
     description: 'Requires an org-level token, that should be defined in secrets. Can be passed in like {{ secrets.ORG_TOKEN }}'
     required: true
   project-field-name:
-    description: 'The name of the issue's project field to update'
+    description: 'The name of the issues project field to update'
     required: true
   project-field-value:
-    description: 'The value to set for the issue's project field'
+    description: 'The value to set for the issues project field'
     required: true
 runs:
   using: 'node16'
