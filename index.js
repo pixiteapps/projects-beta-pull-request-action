@@ -17,15 +17,20 @@ function linkedIssuesAndProjects(pullRequestId) {
             id
             number
             title
-            projectsNext(first: 50) {
+            projectsV2(first: 50) {
               nodes {
                 id
                 title
                 fields(first: 50) {
                   nodes {
-                    id
-                    name
-                    settings
+                    ... on ProjectV2SingleSelectField {
+                      id
+                      name
+                      options {
+                        id
+                        name
+                      }
+                    }
                   }
                 }
               }
@@ -43,8 +48,8 @@ function extractProjectItemId(projectId, itemId) {
   // has no effect since it is part of it already, but it does return the needed id.
 
   return `mutation {
-    addProjectNextItem(input: {projectId: "${projectId}", contentId:"${itemId}"}) {
-      projectNextItem {
+    addProjectV2ItemById(input: {projectId: "${projectId}", contentId:"${itemId}"}) {
+      item {
         id
       }
     }
@@ -53,7 +58,7 @@ function extractProjectItemId(projectId, itemId) {
 
 function updateProjectFieldMutation(projectId, projectItemId, fieldId, fieldValue) {
   return `mutation {
-    updateProjectNextItemField(input: {projectId: "${projectId}", itemId: "${projectItemId}", fieldId: "${fieldId}", value: "${fieldValue}"}) {
+    updateProjectV2ItemFieldValue(input: {projectId: "${projectId}", itemId: "${projectItemId}", fieldId: "${fieldId}", value: {singleSelectOptionId: "${fieldValue}"}}) {
       clientMutationId
     }
   }`
@@ -84,7 +89,7 @@ async function main() {
     console.log(JSON.stringify(node, undefined, 2));
 
     for (let issue of node.closingIssuesReferences.nodes) {
-      for (let project of issue.projectsNext.nodes) {
+      for (let project of issue.projectsV2.nodes) {
         // Find the id of target field in this project
         const field = project.fields.nodes.find(f => f.name === projectFieldName)
 
@@ -94,8 +99,7 @@ async function main() {
         }
 
         // Find the id of the target value for this field
-        const settings = JSON.parse(field.settings)
-        const options = settings.options
+        const options = field.options
 
         const targetValue = options.find( v => v.name === projectFieldValue )
 
@@ -109,16 +113,16 @@ async function main() {
 
         core.debug("projectItemIdQuery:", projectItemIdQuery);
 
-        const { addProjectNextItem } = await octokit.graphql(projectItemIdQuery);
+        const { addProjectV2Item } = await octokit.graphql(projectItemIdQuery);
 
-        core.debug("addProjectNextItem:", JSON.stringify(addProjectNextItem, undefined, 2));
+        core.debug("addProjectV2Item:", JSON.stringify(addProjectV2Item, undefined, 2));
 
-        console.log(JSON.stringify(addProjectNextItem, undefined, 2));
+        console.log(JSON.stringify(addProjectV2Item, undefined, 2));
 
         // Make the actual change to the field
         console.log(`Setting issue #${issue.number} field "${projectFieldName}" to "${projectFieldValue}" in project "${project.name}"`)
 
-        const updateMutation = updateProjectFieldMutation(project.id, addProjectNextItem.projectNextItem.id, field.id, targetValue.id)
+        const updateMutation = updateProjectFieldMutation(project.id, addProjectV2Item.item.id, field.id, targetValue.id)
         
         console.log(updateMutation)
 
