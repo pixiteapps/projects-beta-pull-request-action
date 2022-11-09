@@ -113,16 +113,16 @@ async function main() {
 
         core.debug("projectItemIdQuery:", projectItemIdQuery);
 
-        const { addProjectV2Item } = await octokit.graphql(projectItemIdQuery);
+        const { addProjectV2ItemById } = await octokit.graphql(projectItemIdQuery);
 
-        core.debug("addProjectV2Item:", JSON.stringify(addProjectV2Item, undefined, 2));
+        core.debug("addProjectV2ItemById:", JSON.stringify(addProjectV2ItemById, undefined, 2));
 
-        console.log(JSON.stringify(addProjectV2Item, undefined, 2));
+        console.log(JSON.stringify(addProjectV2ItemById, undefined, 2));
 
         // Make the actual change to the field
-        console.log(`Setting issue #${issue.number} field "${projectFieldName}" to "${projectFieldValue}" in project "${project.name}"`)
+        console.log(`Setting issue #${issue.number} field "${projectFieldName}" to "${projectFieldValue}" in project "${project.title}"`)
 
-        const updateMutation = updateProjectFieldMutation(project.id, addProjectV2Item.item.id, field.id, targetValue.id)
+        const updateMutation = updateProjectFieldMutation(project.id, addProjectV2ItemById.item.id, field.id, targetValue.id)
         
         console.log(updateMutation)
 
